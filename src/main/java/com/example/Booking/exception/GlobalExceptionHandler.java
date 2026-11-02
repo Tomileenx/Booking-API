@@ -57,19 +57,6 @@ public class GlobalExceptionHandler {
                 ));
     }
 
-    @ExceptionHandler(Forbidden.class)
-    public ResponseEntity<ErrorResponse> handleForbidden(
-            Forbidden ex
-    ) {
-        return ResponseEntity
-                .status(HttpStatus.FORBIDDEN)
-                .body(new ErrorResponse(
-                        ex.getMessage(),
-                        "FORBIDDEN",
-                        Instant.now()
-                ));
-    }
-
     @ExceptionHandler(BadRequest.class)
     public ResponseEntity<ErrorResponse> handleBadRequest(
             BadRequest ex
@@ -165,30 +152,6 @@ public class GlobalExceptionHandler {
                 .collect(Collectors.joining(", "));
         return ResponseEntity.badRequest()
                 .body(new ErrorResponse(message, "BAD_REQUEST", Instant.now()));
-    }
-
-
-    @ExceptionHandler({
-            TokenExpired.class,
-            SessionExpired.class
-    })
-    public ResponseEntity<ErrorResponse> handleAuthExpiry(RuntimeException ex) {
-
-        String code;
-
-        if (ex instanceof TokenExpired) {
-            code = "TOKEN_EXPIRED";
-        } else {
-            code = "SESSION_EXPIRED";
-        }
-
-        return ResponseEntity
-                .status(HttpStatus.UNAUTHORIZED)
-                .body(new ErrorResponse(
-                        ex.getMessage(),
-                        code,
-                        Instant.now()
-                ));
     }
 
     @ExceptionHandler

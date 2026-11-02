@@ -71,8 +71,8 @@ public class BookingService {
 
         Booking booking = Booking.builder()
                 .slot(slot)
-                .name(request.name())
-                .email(request.email().trim())
+                .name(request.name().trim())
+                .email(request.email().trim().toLowerCase())
                 .status(BookingStatus.CONFIRMED)
                 .createdAt(Instant.now())
                 .build();

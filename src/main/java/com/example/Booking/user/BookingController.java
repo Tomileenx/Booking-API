@@ -3,9 +3,10 @@ package com.example.Booking.user;
 import com.example.Booking.exception.TooManyRequests;
 import com.example.Booking.idempotency.IdempotencyBookingService;
 import com.example.Booking.rateLimit.RateLimitService;
+import io.swagger.v3.oas.annotations.responses.ApiResponse;
+import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import jakarta.validation.ConstraintViolation;
 import jakarta.validation.ConstraintViolationException;
-import jakarta.validation.Valid;
 import jakarta.validation.Validator;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
@@ -21,6 +22,13 @@ public class BookingController {
     private final RateLimitService rateLimitService;
     private final Validator validator;
 
+    @ApiResponses({
+            @ApiResponse(responseCode = "400", ref = "#/components/responses/400"),
+            @ApiResponse(responseCode = "404", ref = "#/components/responses/404"),
+            @ApiResponse(responseCode = "422", ref = "#/components/responses/429"),
+            @ApiResponse(responseCode = "429", ref = "#/components/responses/429"),
+            @ApiResponse(responseCode = "500", ref = "#/components/responses/500")
+    })
     @PostMapping("/bookings")
     public ResponseEntity<BookingResponse> bookSlot(
             @RequestHeader(value = "Idempotency-Key", required = false) String idempotencyKey,
