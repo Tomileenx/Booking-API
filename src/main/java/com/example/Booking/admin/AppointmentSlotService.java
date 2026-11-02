@@ -1,6 +1,7 @@
 package com.example.Booking.admin;
 
 import com.example.Booking.exception.BadRequest;
+import com.example.Booking.user.BookingRepo;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.Page;
@@ -23,14 +24,15 @@ import java.util.List;
 @Slf4j
 public class AppointmentSlotService {
     private final AppointmentSlotRepo appointmentSlotRepo;
+    private final BookingRepo bookingRepo;
 
     private static final int MAX_PAGE_SIZE = 40;
 
 
     @Transactional
     public void resetAppointmentSlots() {
-        appointmentSlotRepo.deleteAll();
-
+        bookingRepo.deleteAllInBatch();            // 1. children first
+        appointmentSlotRepo.deleteAllInBatch();    // 2. then the slots
         appointmentSlotRepo.saveAll(generateSlots());
     }
 
