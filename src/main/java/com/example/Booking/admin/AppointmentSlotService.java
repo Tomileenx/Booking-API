@@ -1,5 +1,6 @@
 package com.example.Booking.admin;
 
+import com.example.Booking.exception.BadRequest;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.Page;
@@ -13,6 +14,7 @@ import java.time.Instant;
 import java.time.LocalDate;
 import java.time.ZoneOffset;
 import java.time.temporal.ChronoUnit;
+import java.time.temporal.TemporalAdjusters;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -21,6 +23,9 @@ import java.util.List;
 @Slf4j
 public class AppointmentSlotService {
     private final AppointmentSlotRepo appointmentSlotRepo;
+
+    private static final int MAX_PAGE_SIZE = 40;
+
 
     @Transactional
     public void resetAppointmentSlots() {
@@ -32,11 +37,11 @@ public class AppointmentSlotService {
     private List<AppointmentSlot> generateSlots() {
         List<AppointmentSlot> slots = new ArrayList<>();
 
-        LocalDate date = LocalDate.now();
-        int daysCreated = 0;
+        LocalDate today = LocalDate.now();
+        LocalDate first = today.withDayOfMonth(1);
+        LocalDate last = today.with(TemporalAdjusters.lastDayOfMonth());
 
-        while (daysCreated < 5) {
-            date = date.plusDays(1);
+        for (LocalDate date = first; !date.isAfter(last); date = date.plusDays(1)) {
 
             if (date.getDayOfWeek() == DayOfWeek.SATURDAY
                     || date.getDayOfWeek() == DayOfWeek.SUNDAY) {
@@ -44,29 +49,24 @@ public class AppointmentSlotService {
             }
 
             for (int hour = 9; hour <= 16; hour++) {
-                Instant start = date
-                        .atTime(hour, 0)
-                        .toInstant(ZoneOffset.UTC);
-
+                Instant start = date.atTime(hour, 0).toInstant(ZoneOffset.UTC);
                 Instant end = start.plus(30, ChronoUnit.MINUTES);
 
-                appointmentSlotRepo.save(AppointmentSlot.builder()
+                slots.add(AppointmentSlot.builder()
                         .provider("Dr Ade")
                         .start(start)
                         .end(end)
                         .available(true)
                         .build());
             }
-
-            daysCreated++;
         }
 
         return slots;
     }
 
     public Page<AppointmentSlotResponse> getAllAppointmentSlots(Pageable pageable) {
-        if (pageable.getPageSize() > 8) {
-            pageable = PageRequest.of(pageable.getPageNumber(), 8, pageable.getSort());
+        if (pageable.getPageSize() > MAX_PAGE_SIZE) {
+            throw new BadRequest("size must be " + MAX_PAGE_SIZE + " or less");
         }
 
         Page<AppointmentSlot> pages = appointmentSlotRepo.findAll(pageable);
