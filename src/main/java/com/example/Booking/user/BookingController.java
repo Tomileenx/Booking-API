@@ -25,7 +25,7 @@ public class BookingController {
     @ApiResponses({
             @ApiResponse(responseCode = "400", ref = "#/components/responses/400"),
             @ApiResponse(responseCode = "404", ref = "#/components/responses/404"),
-            @ApiResponse(responseCode = "422", ref = "#/components/responses/429"),
+            @ApiResponse(responseCode = "422", ref = "#/components/responses/422"),
             @ApiResponse(responseCode = "429", ref = "#/components/responses/429"),
             @ApiResponse(responseCode = "500", ref = "#/components/responses/500")
     })
