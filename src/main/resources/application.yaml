@@ -1,0 +1,32 @@
+spring:
+  application:
+    name: Booking
+
+  datasource:
+    url: ${DB_URL:jdbc:postgresql://localhost:5432/bookingAPI}
+    username: ${DB_USERNAME}
+    password: ${DB_PASSWORD}
+    driver-class-name: org.postgresql.Driver
+
+  jpa:
+    hibernate:
+      ddl-auto: update
+    show-sql: false
+    properties:
+      hibernate:
+        format_sql: true
+    database: postgresql
+    database-platform: org.hibernate.dialect.PostgreSQLDialect
+
+server:
+  port: 8090
+
+clinic:
+  api:
+    key: ${CLINIC_API_KEY}
+
+springdoc:
+  api-docs:
+    enabled: true
+  swagger-ui:
+    enabled: true
