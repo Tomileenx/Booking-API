@@ -2,6 +2,10 @@ package com.example.Booking.config;
 
 import io.swagger.v3.oas.models.Components;
 import io.swagger.v3.oas.models.OpenAPI;
+import io.swagger.v3.oas.models.media.Content;
+import io.swagger.v3.oas.models.media.MediaType;
+import io.swagger.v3.oas.models.media.Schema;
+import io.swagger.v3.oas.models.responses.ApiResponse;
 import io.swagger.v3.oas.models.security.SecurityRequirement;
 import io.swagger.v3.oas.models.security.SecurityScheme;
 import io.swagger.v3.oas.models.servers.Server;
@@ -18,7 +22,7 @@ public class OpenApiConfig {
         return new OpenAPI()
                 .servers(List.of(
                         new Server()
-                                .url("https://booking-api.onrender.com")
+                                .url("https://booking-api-ngrf.onrender.com")
                                 .description("Production Server")
                 ))
                 .components(new Components()
@@ -26,9 +30,29 @@ public class OpenApiConfig {
                                 new SecurityScheme()
                                         .type(SecurityScheme.Type.APIKEY)
                                         .in(SecurityScheme.In.HEADER)
-                                        .name("X-API-Key")))
+                                        .name("X-API-Key"))
+                        .addResponses("401", errorResponse("Unauthorized"))
+                        .addResponses("400", errorResponse("Bad Request"))
+                        .addResponses("404", errorResponse("Not Found"))
+                        .addResponses("422", errorResponse("Unprocessable Content"))
+                        .addResponses("429", errorResponse("Too Many Requests"))
+                        .addResponses("409", errorResponse("Already Exists"))
+                        .addResponses("503", errorResponse("Service Unavailable"))
+                        .addResponses("500", errorResponse("Internal Server Error"))
+                )
                 .addSecurityItem(
                         new SecurityRequirement().addList("ApiKeyAuth")
                 );
+    }
+
+    private ApiResponse errorResponse(String description) {
+        return new ApiResponse()
+                .description(description)
+                .content(new Content().addMediaType(
+                        "application/json",
+                        new MediaType().schema(
+                                new Schema<>().$ref("#/components/schemas/ErrorResponse")
+                        )
+                ));
     }
 }
