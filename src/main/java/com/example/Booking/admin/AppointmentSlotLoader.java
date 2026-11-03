@@ -17,41 +17,11 @@ import java.util.UUID;
 public class AppointmentSlotLoader {
 
     @Bean
-    CommandLineRunner loadAppointments(AppointmentSlotRepo repo) {
+    CommandLineRunner loadAppointments(AppointmentSlotRepo repo, AppointmentSlotFactory factory) {
         return args -> {
-            if (repo.count() > 0) {
-                return;
+            if (repo.count() == 0) {
+                repo.saveAll(factory.generateMonth());
             }
-            repo.saveAll(generateSlots());
         };
-    }
-
-    static List<AppointmentSlot> generateSlots() {
-        List<AppointmentSlot> slots = new ArrayList<>();
-
-        LocalDate today = LocalDate.now();
-        LocalDate first = today.withDayOfMonth(1);
-        LocalDate last = today.with(TemporalAdjusters.lastDayOfMonth());
-
-        for (LocalDate date = first; !date.isAfter(last); date = date.plusDays(1)) {
-
-            if (date.getDayOfWeek() == DayOfWeek.SATURDAY
-                    || date.getDayOfWeek() == DayOfWeek.SUNDAY) {
-                continue;
-            }
-
-            for (int hour = 9; hour <= 16; hour++) {
-                Instant start = date.atTime(hour, 0).toInstant(ZoneOffset.UTC);
-                Instant end = start.plus(30, ChronoUnit.MINUTES);
-
-                slots.add(AppointmentSlot.builder()
-                        .provider("Dr Ade")
-                        .start(start)
-                        .end(end)
-                        .available(true)
-                        .build());
-            }
-        }
-        return slots;
     }
 }

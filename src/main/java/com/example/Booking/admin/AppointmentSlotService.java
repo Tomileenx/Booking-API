@@ -1,21 +1,14 @@
 package com.example.Booking.admin;
 
 import com.example.Booking.exception.BadRequest;
+import com.example.Booking.idempotency.IdempotencyRecordRepo;
 import com.example.Booking.user.BookingRepo;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.data.domain.Page;
-import org.springframework.data.domain.PageRequest;
-import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.time.DayOfWeek;
-import java.time.Instant;
-import java.time.LocalDate;
-import java.time.ZoneOffset;
-import java.time.temporal.ChronoUnit;
-import java.time.temporal.TemporalAdjusters;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -25,62 +18,48 @@ import java.util.List;
 public class AppointmentSlotService {
     private final AppointmentSlotRepo appointmentSlotRepo;
     private final BookingRepo bookingRepo;
-
-    private static final int MAX_PAGE_SIZE = 40;
-
+    private final IdempotencyRecordRepo idempotencyRecordRepo;
+    private final AppointmentSlotFactory slotFactory;
 
     @Transactional
-    public void resetAppointmentSlots() {
-        bookingRepo.deleteAllInBatch();            // 1. children first
-        appointmentSlotRepo.deleteAllInBatch();    // 2. then the slots
-        appointmentSlotRepo.saveAll(generateSlots());
-    }
+    public void resetAppointmentSlots(AppointmentSlotResetRequest request) {
+       if (request == null || request.slots() == null) {
+           throw new BadRequest("slots is required");
+       }
 
-    private List<AppointmentSlot> generateSlots() {
         List<AppointmentSlot> slots = new ArrayList<>();
-
-        LocalDate today = LocalDate.now();
-        LocalDate first = today.withDayOfMonth(1);
-        LocalDate last = today.with(TemporalAdjusters.lastDayOfMonth());
-
-        for (LocalDate date = first; !date.isAfter(last); date = date.plusDays(1)) {
-
-            if (date.getDayOfWeek() == DayOfWeek.SATURDAY
-                    || date.getDayOfWeek() == DayOfWeek.SUNDAY) {
-                continue;
+        for (AppointmentSlotResetRequest.SlotInput s : request.slots()) {
+            if (s == null
+                    || s.provider() == null || s.provider().isBlank()
+                    || s.start() == null || s.end() == null
+                    || !s.end().isAfter(s.start())) {
+                throw new BadRequest("Each slot needs provider, start, and an end after start");
             }
-
-            for (int hour = 9; hour <= 16; hour++) {
-                Instant start = date.atTime(hour, 0).toInstant(ZoneOffset.UTC);
-                Instant end = start.plus(30, ChronoUnit.MINUTES);
-
-                slots.add(AppointmentSlot.builder()
-                        .provider("Dr Ade")
-                        .start(start)
-                        .end(end)
-                        .available(true)
-                        .build());
-            }
+            slots.add(slotFactory.create(s.provider().trim(), s.start(), s.end()));
         }
 
-        return slots;
+        idempotencyRecordRepo.deleteAllInBatch();
+        bookingRepo.deleteAllInBatch();
+        appointmentSlotRepo.deleteAllInBatch();
+        appointmentSlotRepo.saveAll(slots);
     }
 
-    public Page<AppointmentSlotResponse> getAllAppointmentSlots(Pageable pageable) {
-        if (pageable.getPageSize() > MAX_PAGE_SIZE) {
-            throw new BadRequest("size must be " + MAX_PAGE_SIZE + " or less");
-        }
+    @Transactional(readOnly = true)
+    public List<AppointmentSlotResponse> getAllAppointmentSlots(String provider) {
+        Sort sort = Sort.by(Sort.Direction.ASC, "start", "id");
 
-        Page<AppointmentSlot> pages = appointmentSlotRepo.findAll(pageable);
+       List<AppointmentSlot> slots =
+               (provider == null || provider.isBlank())
+               ? appointmentSlotRepo.findAll(sort)
+                       : appointmentSlotRepo.findByProvider(provider, sort);
 
-        return pages.map(
-                page -> new AppointmentSlotResponse(
-                        page.getId(),
-                        page.getProvider(),
-                        page.getStart(),
-                        page.getEnd(),
-                        page.isAvailable()
-                )
-        );
+       return slots.stream()
+            .map(s-> new AppointmentSlotResponse(
+                    s.getId(),
+                    s.getProvider(),
+                    s.getStart(),
+                    s.getEnd(),
+                    s.isAvailable())
+            ).toList();
     }
 }

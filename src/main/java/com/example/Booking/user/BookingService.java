@@ -60,11 +60,11 @@ public class BookingService {
             throw new BadRequest("Name cannot be empty");
         }
 
-        if (slotRepo.claimSlot(request.slotId()) == 0) {
+        if (slotRepo.claimSlot(request.slotId(), Instant.now()) == 0) {
             if (!slotRepo.existsById(request.slotId())) {
                 throw new NotFound("Slot Id not found");
             }
-            throw new AlreadyExists("This slot is already booked");   // -> 409
+            throw new AlreadyExists("This slot is already booked");
         }
 
         AppointmentSlot slot = slotRepo.getReferenceById(request.slotId());
