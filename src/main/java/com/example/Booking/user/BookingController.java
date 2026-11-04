@@ -3,6 +3,8 @@ package com.example.Booking.user;
 import com.example.Booking.exception.TooManyRequests;
 import com.example.Booking.idempotency.IdempotencyBookingService;
 import com.example.Booking.rateLimit.RateLimitService;
+import io.swagger.v3.oas.annotations.media.Content;
+import io.swagger.v3.oas.annotations.media.Schema;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import jakarta.validation.ConstraintViolation;
@@ -23,6 +25,14 @@ public class BookingController {
     private final Validator validator;
 
     @ApiResponses({
+            @ApiResponse(
+                    responseCode = "201",
+                    description = "Booking created or existing idempotent booking returned",
+                    content = @Content(
+                            mediaType = "application/json",
+                            schema = @Schema(implementation = BookingResponse.class)
+                    )
+            ),
             @ApiResponse(responseCode = "400", ref = "#/components/responses/400"),
             @ApiResponse(responseCode = "404", ref = "#/components/responses/404"),
             @ApiResponse(responseCode = "422", ref = "#/components/responses/422"),
@@ -47,6 +57,14 @@ public class BookingController {
        return idempotencyBookingService.book(request, idempotencyKey);
     }
 
+    @ApiResponse(
+            responseCode = "200",
+            description = "Bookings retrieved successfully",
+            content = @Content(
+                    mediaType = "application/json",
+                    schema = @Schema(implementation = BookingResponse.class)
+            )
+    )
     @GetMapping("/bookings")
     public ResponseEntity<BookingPage> listBookings(
             @RequestParam String email,
@@ -56,6 +74,14 @@ public class BookingController {
         return ResponseEntity.ok(bookingService.listBookings(email, limit, cursor));
     }
 
+    @ApiResponse(
+            responseCode = "200",
+            description = "Booking retrieved successfully",
+            content = @Content(
+                    mediaType = "application/json",
+                    schema = @Schema(implementation = BookingResponse.class)
+            )
+    )
     @GetMapping("/bookings/{id}")
     public ResponseEntity<BookingResponse> getBooking(
             @PathVariable String id
@@ -65,6 +91,14 @@ public class BookingController {
         return ResponseEntity.ok().body(response);
     }
 
+    @ApiResponse(
+            responseCode = "200",
+            description = "Booking cancelled successfully",
+            content = @Content(
+                    mediaType = "application/json",
+                    schema = @Schema(implementation = BookingResponse.class)
+            )
+    )
     @DeleteMapping("/bookings/{id}")
     public ResponseEntity<BookingResponse> deleteBooking(
             @PathVariable String id
