@@ -7,15 +7,7 @@ import lombok.*;
 import java.time.Instant;
 
 @Entity
-@Table(
-        name = "bookings",
-        uniqueConstraints = {
-                @UniqueConstraint(
-                        name = "uk_booking_appointment_slot",
-                        columnNames = "slot_id"
-                )
-        }
-)
+@Table(name = "bookings")
 @NoArgsConstructor
 @AllArgsConstructor
 @Getter
@@ -26,8 +18,8 @@ public class Booking {
     @GeneratedValue(strategy = GenerationType.UUID)
     private String id;
 
-    @OneToOne
-    @JoinColumn(name = "slot_id", nullable = false, unique = true)
+    @ManyToOne(fetch = FetchType.LAZY, optional = false)
+    @JoinColumn(name = "slot_id", nullable = false)
     private AppointmentSlot slot;
 
     @Column(nullable = false)

@@ -64,7 +64,7 @@ public class BookingService {
             if (!slotRepo.existsById(request.slotId())) {
                 throw new NotFound("Slot Id not found");
             }
-            throw new AlreadyExists("This slot is already booked");
+            throw new AlreadyExists("This slot is not available for booking");
         }
 
         AppointmentSlot slot = slotRepo.getReferenceById(request.slotId());
@@ -76,8 +76,6 @@ public class BookingService {
                 .status(BookingStatus.CONFIRMED)
                 .createdAt(Instant.now())
                 .build();
-
-        slot.setAvailable(false);
 
         try {
             booking = bookingRepo.saveAndFlush(booking);
@@ -163,6 +161,12 @@ public class BookingService {
 
         book.setStatus(BookingStatus.CANCELLED);
         bookingRepo.save(book);
+
+        AppointmentSlot slot = book.getSlot();
+
+        if (slot.getStart().isAfter(Instant.now())) {
+            slot.setAvailable(true);
+        }
 
         return new BookingResponse(
                 book.getId(),
