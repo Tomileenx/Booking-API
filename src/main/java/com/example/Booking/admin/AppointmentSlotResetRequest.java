@@ -6,5 +6,5 @@ import java.util.List;
 public record AppointmentSlotResetRequest(
         List<SlotInput> slots
 ) {
-    public record SlotInput(String id, String provider, Instant start, Instant end) {}
+    public record SlotInput(String provider, Instant start, Instant end) {}
 }
